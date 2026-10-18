@@ -13,7 +13,7 @@ A small Python desktop app that shows time-synced lyrics for whatever song is cu
 
 ## Screenshot
 
-![alt text](image.png)
+![Spotify Lyrics App showing the current line in large text, with the previous and next lines above and below](image.png)
 
 ## Requirements
 
@@ -26,8 +26,8 @@ A small Python desktop app that shows time-synced lyrics for whatever song is cu
 1. Clone the repo:
 
    ```bash
-   git clone https://github.com/your-username/your-repo-name.git
-   cd your-repo-name
+   git clone https://github.com/KavinLokeswaran/Spotify_lyric_player.git
+   cd Spotify_lyric_player
    ```
 
 2. Install dependencies:
