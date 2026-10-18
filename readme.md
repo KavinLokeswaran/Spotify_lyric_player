@@ -7,6 +7,7 @@ A small Python desktop app that shows time-synced lyrics for whatever song is cu
 - Reads what's currently playing on Spotify (requires Spotify Premium and active playback)
 - Shows synced lyrics fetched from [lrclib.net](https://lrclib.net) — previous, current, and next line
 - Updates smoothly (10 times per second) by estimating playback position locally, without spamming the Spotify API
+- Smooth, animated gradient background that takes its colors from the current song's album cover
 - Responsive design — text size scales automatically with the window size
 - Fullscreen mode for use as a clean "now playing" display
 
