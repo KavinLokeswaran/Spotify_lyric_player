@@ -12,10 +12,10 @@ load_dotenv()
 
 POLL_INTERVAL_SEC = 2.0   # hvor ofte vi faktisk spør Spotify (for å unngå rate-limiting)
 TICK_INTERVAL_MS = 100    # hvor ofte GUI oppdaterer linjen (jo lavere, jo raskere/jevnere)
-BG_COLOR = "#0b0b0f"
+BG_COLOR = "#18181c"
 FG_ACTIVE = "#ffffff"
 FG_DIM = "#666672"
-ACCENT = "#1db954"  # Spotify-grønn
+ACCENT = "#5a625d"  # Spotify-grønn
 
 # Referansestørrelse vinduet er designet for - skriftstørrelser skaleres opp/ned herfra
 BASE_WIDTH = 900
