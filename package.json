@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "Time-synced lyrics for whatever is playing on Spotify – desktop app for Windows and macOS",
   "main": "src/main/main.js",
-  "spotifyClientId": "",
+  "spotifyClientId": "51715cf594564f33913154646b7f9555",
   "author": "Kavin Lokeswaran",
   "license": "UNLICENSED",
   "private": true,
