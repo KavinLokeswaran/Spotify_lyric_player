@@ -1,5 +1,6 @@
 (() => {
   const POLL_MS = 1500;           // hvor ofte vi faktisk spør Spotify (for å unngå rate-limiting)
+  const POLL_LOCAL_MS = 1000;     // lokal modus har ingen rate-limit, så vi kan spørre oftere
   const POLL_HIDDEN_MS = 5000;    // sjeldnere når vinduet er skjult
   const IDLE_MS = 2600;           // kontrollene skjules når musen har vært i ro så lenge
   const JITTER_MS = 250;          // små avvik mellom estimat og Spotify ignoreres, så teksten ikke hakker
@@ -57,8 +58,8 @@
     new ResizeObserver(() => centerOn(state.idx, false)).observe($('#lyrics'));
     requestAnimationFrame(frame);
 
-    if (state.env.loggedIn) startPolling();
-    else showOnboarding();
+    if (state.settings.source === 'spotify' && !state.env.loggedIn) showOnboarding();
+    else startPolling();
   }
 
   function browserApi() {
@@ -67,7 +68,7 @@
     let saved = {};
     try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch { /* privat modus */ }
     return {
-      getState: async () => ({ settings: saved, loggedIn: false, platform: 'web', version: 'web', redirectUri: 'http://127.0.0.1:8888/callback', clientId: '' }),
+      getState: async () => ({ settings: { ...saved, source: 'spotify' }, loggedIn: false, localSupported: false, platform: 'web', version: 'web', redirectUri: 'http://127.0.0.1:8888/callback', clientId: '' }),
       setSettings: async (patch) => {
         Object.assign(saved, patch);
         try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch { /* ignorer */ }
@@ -91,6 +92,12 @@
   function setupOnboarding() {
     $('#redirectUri').textContent = state.env.redirectUri;
     $('#clientIdInput').value = state.env.clientId || '';
+    // Med innebygd Client ID er egen Spotify-app bare et valg for spesielt interesserte
+    const advanced = $('#advancedSetup');
+    advanced.open = !state.env.builtInClientId || Boolean(state.env.clientId);
+    advanced.classList.toggle('required', !state.env.builtInClientId);
+    $('#localBtn').hidden = !state.env.localSupported;
+    $('#localBtn').addEventListener('click', () => setSource('local'));
     $('#copyRedirect').addEventListener('click', () => {
       navigator.clipboard.writeText(state.env.redirectUri);
       toast('Kopiert');
@@ -110,7 +117,11 @@
   async function login() {
     const id = $('#clientIdInput').value.trim();
     const error = $('#loginError');
-    if (!/^[a-f0-9]{32}$/i.test(id)) {
+    if (!id && !state.env.builtInClientId) {
+      error.textContent = 'Lim inn Client ID-en fra Spotify-appen din først.';
+      return;
+    }
+    if (id && !/^[a-f0-9]{32}$/i.test(id)) {
       error.textContent = 'Client ID ser ikke riktig ut - den er 32 tegn med tall og bokstaver.';
       return;
     }
@@ -128,9 +139,29 @@
       return;
     }
     state.env.loggedIn = true;
+    setSource('spotify');
+  }
+
+  // Bytter mellom Spotify-appen på denne maskinen og Spotify-kontoen (Web API)
+  function setSource(source) {
+    if (state.settings.source !== source) changeSettings({ source });
+    else sourceChanged();
+  }
+
+  function sourceChanged() {
+    clearTimeout(pollTimer);
+    state.demo = false;
+    body.classList.remove('demo');
+    state.track = null;
+    clearLyrics();
+    setTrackInfo(null);
     updateAccountInfo();
+    if (state.settings.source === 'spotify' && !state.env.loggedIn) {
+      closeSettings();
+      showOnboarding();
+      return;
+    }
     hideOnboarding();
-    startDemo(false);
     startPolling();
   }
 
@@ -161,10 +192,16 @@
   function updateAccountInfo() {
     const info = $('#accountInfo');
     if (info) {
-      info.innerHTML = state.env.loggedIn
-        ? `Logget inn med Client ID <code>${(state.env.clientId || '').slice(0, 8)}…</code>`
-        : 'Ikke logget inn på Spotify.';
+      const local = state.settings.source === 'local';
+      const account = state.env.loggedIn ? 'Du er logget inn med Spotify.' : 'Du er ikke logget inn med Spotify.';
+      info.textContent = local
+        ? `Leser direkte fra Spotify-appen på denne maskinen - ingen innlogging trengs. ${state.env.loggedIn ? '' : 'Logg inn for å se musikk som spilles på mobilen eller andre enheter.'}`
+        : `${account} Viser det som spilles på alle enhetene dine.`;
     }
+    const loginBtn = $('#loginAction');
+    if (loginBtn) loginBtn.hidden = state.env.loggedIn;
+    const logoutBtn = $('#logoutAction');
+    if (logoutBtn) logoutBtn.hidden = !state.env.loggedIn;
     const demoBtn = $('#demoToggle');
     if (demoBtn) demoBtn.textContent = state.demo ? 'Avslutt demo' : 'Demomodus';
   }
@@ -179,12 +216,20 @@
   async function poll() {
     clearTimeout(pollTimer);
     let delay = POLL_MS;
-    const res = state.demo ? { ok: true, data: Demo.playback() } : await api.playback();
+    const source = state.settings.source;
+    const res = state.demo ? { ok: true, data: Demo.playback() } : await api.playback(source);
+    // Kilden kan ha blitt byttet mens vi ventet på svar
+    if (!state.demo && source !== state.settings.source) return;
 
     if (res.ok) {
       delay = handlePlayback(res.data);
+      if (source === 'local' && !state.demo) delay = Math.min(delay, POLL_LOCAL_MS);
     } else if (res.rateLimited) {
       delay = 5000;
+    } else if (source === 'local') {
+      // F.eks. manglende tillatelse til å lese Spotify på Mac
+      handlePlayback({ active: false, reason: 'error', error: res.error });
+      delay = 3000;
     } else if (/Ikke logget inn|invalid_grant/i.test(res.error)) {
       state.env.loggedIn = false;
       updateAccountInfo();
@@ -208,7 +253,16 @@
       }
       setTrackInfo(null);
       if (pb.active) showMessage('note', 'Reklame eller ukjent innhold', 'Lyrics kommer tilbake på neste sang');
-      else showMessage('note', 'Ingenting spilles av akkurat nå', 'Start en sang i Spotify på hvilken som helst enhet');
+      else if (pb.reason === 'not-running') {
+        showMessage('note', 'Spotify er ikke åpen på denne maskinen',
+          'Start Spotify-appen - eller velg Spotify-konto under innstillinger (S) for å se musikk fra mobilen');
+      } else if (pb.reason === 'unsupported') {
+        showMessage('note', 'Lokal modus virker bare på Mac og Windows', 'Velg Spotify-konto under innstillinger (S)');
+      } else if (pb.reason === 'error') {
+        showMessage('note', 'Klarte ikke å lese Spotify', pb.error);
+      } else if (state.settings.source === 'local' && !state.demo) {
+        showMessage('note', 'Ingenting spilles av akkurat nå', 'Start en sang i Spotify-appen');
+      } else showMessage('note', 'Ingenting spilles av akkurat nå', 'Start en sang i Spotify på hvilken som helst enhet');
       setStatus('');
       return POLL_MS * 2;
     }
@@ -610,6 +664,7 @@
     root.setProperty('--speed', Math.max(0.05, s.animSpeed));
 
     if (prev.accent !== s.accent) applyAccent();
+    if (prev.source !== undefined && prev.source !== s.source) sourceChanged();
     if (prev.background !== s.background) api.setTitleBarColor(s.background === 'paper' ? '#1b1a17' : '#ffffff');
     if (prev.showInterludes !== undefined && prev.showInterludes !== s.showInterludes && state.lyricsData) renderLyrics();
 
@@ -622,28 +677,24 @@
 
   async function runAction(action) {
     switch (action) {
+      case 'login':
+        closeSettings();
+        showOnboarding();
+        break;
       case 'logout':
         await api.logout();
         state.env.loggedIn = false;
-        state.demo = false;
-        body.classList.remove('demo');
-        state.track = null;
-        clearLyrics();
-        clearTimeout(pollTimer);
-        closeSettings();
-        updateAccountInfo();
-        showOnboarding();
+        // Lokal modus trenger ingen innlogging - bare Spotify-konto må tilbake til innloggingen
+        if (state.settings.source === 'spotify') sourceChanged();
+        else updateAccountInfo();
+        toast('Logget ut av Spotify');
         break;
       case 'toggle-demo':
-        clearLyrics();
-        if (state.demo) {
-          startDemo(false);
-          if (state.env.loggedIn) startPolling();
-          else {
-            closeSettings();
-            showOnboarding();
-          }
-        } else startDemo(true);
+        if (state.demo) sourceChanged();
+        else {
+          clearLyrics();
+          startDemo(true);
+        }
         break;
       case 'clear-cache':
         await api.clearLyricsCache();
@@ -732,9 +783,9 @@
       setTimeout(poll, 30);
       return;
     }
-    const res = await api.control(action, arg);
+    const res = await api.control(state.settings.source, action, arg);
     if (!res.ok) {
-      toast(res.status === 403 ? 'Spotify Premium kreves for å styre avspillingen' : `Kunne ikke styre Spotify: ${res.error}`);
+      toast(res.status === 403 ? 'Spotify Premium kreves for å styre avspillingen via kontoen' : `Kunne ikke styre Spotify: ${res.error}`);
     }
     setTimeout(poll, 350);
   }

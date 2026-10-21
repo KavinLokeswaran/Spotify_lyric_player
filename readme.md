@@ -30,6 +30,12 @@ Every theme is a starting point. You can mix them yourself:
 ![Studio theme with album cover on the left](docs/studio.jpg)
 ![The settings panel with theme previews](docs/settings.jpg)
 
+### Two ways to follow what's playing
+- **This computer (default, no login):** reads straight from the Spotify desktop app on the same machine, via AppleScript on macOS and the Windows media session on Windows. No Spotify account setup, no developer app, and it works with free Spotify accounts. The only requirement is that the music plays in the Spotify app on this computer.
+- **Spotify account (optional):** log in with Spotify to follow music playing on your phone, speakers or any other device.
+
+Switch between them under **Settings → Source and account**.
+
 ### Other features
 - **Playback controls:** play/pause, next/previous, and a progress bar you can click to seek (requires Spotify Premium)
 - **Click a line** to jump to that point in the song
@@ -44,6 +50,7 @@ Every theme is a starting point. You can mix them yourself:
 - **Demo mode:** try every look without a Spotify account
 - Smooth updates: the playback position is estimated locally between Spotify requests, and the app slows down when the window is hidden
 - Secure login with PKCE: no Client Secret is needed, and the token is encrypted with the OS keychain (Keychain / DPAPI)
+- Playback controls also work in local mode, without Premium
 
 ## Installation
 
@@ -57,12 +64,20 @@ The app is not code-signed, so the first launch shows a warning:
 - **macOS:** right-click the app → **Open** → **Open**. If macOS says the app is "damaged", run `xattr -cr "/Applications/Lyric Player.app"`.
 - **Windows:** click **More info** → **Run anyway** in SmartScreen.
 
-### Connect to Spotify
-1. Create an app on the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
-2. Check **Web API** and add `http://127.0.0.1:8888/callback` as a **Redirect URI**
-3. Open Lyric Player, paste the **Client ID** and click **Log in with Spotify**
+### First launch
+Open Spotify on the same computer and start a song. Lyric Player picks it up automatically.
 
-A Client Secret is not needed. Reading playback works with a free account, but controlling playback requires Premium.
+On macOS, you'll be asked once whether Lyric Player may control Spotify. Click **OK**. If you clicked "Don't Allow", turn it back on under **System Settings → Privacy & Security → Automation**.
+
+### Optional: log in with your Spotify account
+To see lyrics for music playing on other devices, choose **Spotify account** in settings and click **Log in with Spotify**.
+
+This needs a Client ID built into the app. As the app's owner:
+1. Create an app on the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard), check **Web API** and add `http://127.0.0.1:8888/callback` as a **Redirect URI**
+2. Paste its **Client ID** into `spotifyClientId` in `package.json` and rebuild. A Client Secret is not needed, and the Client ID is not a secret.
+3. Under **User Management** in the dashboard, add the name and Spotify email of everyone who should be able to log in
+
+Spotify limits apps in Development Mode to 5 users, and the app owner must have Spotify Premium. Without a built-in Client ID, users can still paste their own under "Use your own Spotify app (advanced)". Controlling playback through the account requires Premium.
 
 ## Development
 
@@ -76,12 +91,13 @@ npm run dist:win   # build .exe for Windows
 npm run icon       # regenerate build/icon.png
 ```
 
-You can put `SPOTIFY_CLIENT_ID` in a `.env` file during development (see `.env.example`).
+You can put `SPOTIFY_CLIENT_ID` in a `.env` file during development (see `.env.example`). It then works like the built-in Client ID.
 
 ### Structure
 ```
 src/
-  main/        Electron main process: window, Spotify login/API, lyrics lookup, settings
+  main/        Electron main process: window, Spotify login/API, local player
+               (AppleScript / Windows media session), lyrics lookup, settings
   preload.js   The safe bridge between the main process and the UI
   renderer/    The UI: HTML/CSS/JS, themes, settings panel, demo mode
   shared/      Default settings shared by both

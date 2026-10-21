@@ -10,8 +10,8 @@ contextBridge.exposeInMainWorld('lyricsApi', {
   login: () => ipcRenderer.invoke('auth:login'),
   logout: () => ipcRenderer.invoke('auth:logout'),
 
-  playback: () => ipcRenderer.invoke('spotify:playback'),
-  control: (action, arg) => ipcRenderer.invoke('spotify:control', action, arg),
+  playback: (source) => ipcRenderer.invoke('player:playback', source),
+  control: (source, action, arg) => ipcRenderer.invoke('player:control', source, action, arg),
 
   lyrics: (track) => ipcRenderer.invoke('lyrics:get', track),
   clearLyricsCache: () => ipcRenderer.invoke('lyrics:clearCache'),
