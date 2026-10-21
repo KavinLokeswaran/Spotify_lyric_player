@@ -98,22 +98,26 @@
     <div class="card">
       <div class="logo"></div>
       <h1>Lyric Player</h1>
-      <p class="lead">Synkroniserte lyrics for det du hører på i Spotify.</p>
-      <ol class="steps">
-        <li>
-          Lag en gratis app på <a href="#" data-link="https://developer.spotify.com/dashboard">Spotify Developer Dashboard</a>.
-          Kryss av for <b>Web API</b> og legg inn denne Redirect URI-en:
-          <div class="copy-row"><code id="redirectUri"></code><button class="chip" id="copyRedirect">Kopier</button></div>
-        </li>
-        <li>
-          Lim inn appens <b>Client ID</b> (Client Secret trengs ikke):
-          <input id="clientIdInput" placeholder="f.eks. 3f2a9c…" spellcheck="false" autocomplete="off">
-        </li>
-        <li>Logg inn og godkjenn tilgangen i nettleseren.</li>
-      </ol>
+      <p class="lead">Logg inn med Spotify for å se lyrics for det som spilles på alle enhetene dine – også mobilen og høyttalere.</p>
+      <details id="advancedSetup">
+        <summary>Bruk din egen Spotify-app (avansert)</summary>
+        <ol class="steps">
+          <li>
+            Lag en gratis app på <a href="#" data-link="https://developer.spotify.com/dashboard">Spotify Developer Dashboard</a>.
+            Kryss av for <b>Web API</b> og legg inn denne Redirect URI-en:
+            <div class="copy-row"><code id="redirectUri"></code><button class="chip" id="copyRedirect">Kopier</button></div>
+          </li>
+          <li>
+            Lim inn appens <b>Client ID</b> (Client Secret trengs ikke):
+            <input id="clientIdInput" placeholder="f.eks. 3f2a9c…" spellcheck="false" autocomplete="off">
+          </li>
+          <li>Logg inn og godkjenn tilgangen i nettleseren.</li>
+        </ol>
+      </details>
       <div class="actions">
         <button class="primary" id="loginBtn">Logg inn med Spotify</button>
-        <button class="ghost" id="demoBtn">Prøv demo uten Spotify</button>
+        <button class="ghost" id="localBtn">Bruk denne maskinen i stedet</button>
+        <button class="ghost" id="demoBtn">Prøv demo</button>
       </div>
       <p id="loginError" class="error"></p>
     </div>

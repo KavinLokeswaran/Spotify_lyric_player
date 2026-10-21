@@ -79,11 +79,14 @@ const SettingsUI = (() => {
         { type: 'toggle', key: 'launchAtLogin', label: 'Start når du logger inn på maskinen', hint: 'Virker i den installerte appen' },
         { type: 'buttons', buttons: [{ action: 'mini', label: 'Minispiller' }, { action: 'fullscreen', label: 'Fullskjerm' }] },
       ] },
-      { title: 'Konto og data', items: [
+      { title: 'Kilde og konto', items: [
+        { type: 'segmented', key: 'source', label: 'Hent avspilling fra', options: [
+          { id: 'local', name: 'Denne maskinen' }, { id: 'spotify', name: 'Spotify-konto' }] },
         { type: 'info', id: 'accountInfo' },
         { type: 'buttons', buttons: [
+          { action: 'login', label: 'Logg inn med Spotify', id: 'loginAction' },
+          { action: 'logout', label: 'Logg ut', id: 'logoutAction' },
           { action: 'toggle-demo', label: 'Demomodus', id: 'demoToggle' },
-          { action: 'logout', label: 'Logg ut' },
           { action: 'clear-cache', label: 'Tøm lyrics-cache' },
           { action: 'reset-settings', label: 'Tilbakestill innstillinger', style: 'danger' },
         ] },

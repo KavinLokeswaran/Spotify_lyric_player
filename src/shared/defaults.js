@@ -2,6 +2,7 @@
 (function (root) {
   // Standardinnstillinger - alt brukeren kan endre i innstillingspanelet
   const DEFAULT_SETTINGS = {
+    source: 'local',          // local (Spotify-appen på denne maskinen) | spotify (Spotify-konto / Web API)
     layout: 'classic',        // classic | scroll | split | vinyl | minimal
     background: 'aurora',     // aurora | cover-blur | cover | gradient | solid | paper
     font: 'system',           // system | serif | rounded | mono | condensed

@@ -1,6 +1,8 @@
 const http = require('http');
 const crypto = require('crypto');
 const { shell } = require('electron');
+// Innebygd Client ID (fra package.json), så brukerne bare trenger å logge inn med Spotify
+const { spotifyClientId: BUILT_IN_CLIENT_ID = '' } = require('../../package.json');
 
 const REDIRECT_PORT = 8888;
 const REDIRECT_URI = `http://127.0.0.1:${REDIRECT_PORT}/callback`;
@@ -30,8 +32,13 @@ class SpotifyClient {
     this.rateLimitedUntil = 0;
   }
 
+  // Egen Client ID (avansert) går foran den innebygde
   get clientId() {
-    return this.store.get('clientId') || process.env.SPOTIFY_CLIENT_ID || '';
+    return this.store.get('clientId') || BUILT_IN_CLIENT_ID || process.env.SPOTIFY_CLIENT_ID || '';
+  }
+
+  get hasBuiltInClientId() {
+    return Boolean(BUILT_IN_CLIENT_ID || process.env.SPOTIFY_CLIENT_ID);
   }
 
   isLoggedIn() {

@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Time-synced lyrics for whatever is playing on Spotify – desktop app for Windows and macOS",
   "main": "src/main/main.js",
+  "spotifyClientId": "51715cf594564f33913154646b7f9555",
   "author": "Kavin Lokeswaran",
   "license": "UNLICENSED",
   "private": true,
@@ -47,7 +48,10 @@
             "x64"
           ]
         }
-      ]
+      ],
+      "extendInfo": {
+        "NSAppleEventsUsageDescription": "Lyric Player leser hvilken sang som spilles i Spotify, så den kan vise riktige lyrics."
+      }
     },
     "dmg": {
       "title": "Lyric Player"

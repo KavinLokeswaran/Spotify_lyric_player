@@ -4,6 +4,7 @@ const { app, BrowserWindow, ipcMain, shell, globalShortcut, screen } = require('
 const { Store } = require('./store');
 const { SpotifyClient, REDIRECT_URI } = require('./spotify');
 const lyrics = require('./lyrics');
+const localPlayer = require('./local-player');
 
 const IS_MAC = process.platform === 'darwin';
 const MINI_SIZE = { width: 460, height: 150 };
@@ -127,7 +128,7 @@ function wrap(fn) {
     try {
       return { ok: true, data: await fn(...args) };
     } catch (e) {
-      return { ok: false, error: e.message, rateLimited: Boolean(e.rateLimited), status: e.status };
+      return { ok: false, error: e.message, code: e.code, rateLimited: Boolean(e.rateLimited), status: e.status };
     }
   };
 }
@@ -135,8 +136,10 @@ function wrap(fn) {
 function registerIpc() {
   ipcMain.handle('state:get', () => ({
     settings: store.get('settings'),
-    clientId: spotify.clientId,
+    clientId: store.get('clientId') || '',
+    builtInClientId: spotify.hasBuiltInClientId,
     loggedIn: spotify.isLoggedIn(),
+    localSupported: localPlayer.supported,
     platform: process.platform,
     version: app.getVersion(),
     redirectUri: REDIRECT_URI,
@@ -158,8 +161,9 @@ function registerIpc() {
   ipcMain.handle('auth:login', wrap(() => spotify.login()));
   ipcMain.handle('auth:logout', () => spotify.logout());
 
-  ipcMain.handle('spotify:playback', wrap(() => spotify.playback()));
-  ipcMain.handle('spotify:control', wrap((action, arg) => spotify.control(action, arg)));
+  // Kilden velges i rendereren: 'local' = Spotify-appen på denne maskinen, 'spotify' = Web API
+  ipcMain.handle('player:playback', wrap((source) => (source === 'local' ? localPlayer : spotify).playback()));
+  ipcMain.handle('player:control', wrap((source, action, arg) => (source === 'local' ? localPlayer : spotify).control(action, arg)));
 
   ipcMain.handle('lyrics:get', wrap((track) => lyrics.getLyrics(track)));
   ipcMain.handle('lyrics:clearCache', () => lyrics.clearCache());
@@ -167,6 +171,7 @@ function registerIpc() {
   // Albumcoveret hentes her og sendes som data-URL, så rendereren kan lese
   // pikslene (fargepaletten) uten CORS-problemer
   ipcMain.handle('cover:get', wrap(async (url) => {
+    if (url === 'local:thumbnail') return localPlayer.thumbnail();
     if (!/^https:\/\/[a-z0-9.-]+\.(scdn\.co|spotifycdn\.com)\//i.test(url)) throw new Error('Ugyldig bilde-URL');
     const resp = await fetch(url);
     if (!resp.ok) throw new Error(`Bildet svarte ${resp.status}`);
@@ -229,7 +234,10 @@ if (!app.requestSingleInstanceLock()) {
     });
   });
 
-  app.on('will-quit', () => globalShortcut.unregisterAll());
+  app.on('will-quit', () => {
+    globalShortcut.unregisterAll();
+    localPlayer.stop();
+  });
   app.on('window-all-closed', () => {
     if (!IS_MAC) app.quit();
   });
