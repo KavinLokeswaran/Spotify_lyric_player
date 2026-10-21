@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="no">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lyric Player</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="layout-classic bg-aurora align-center font-system">
+  <!-- Bakgrunnslag - bare det som passer valgt bakgrunn er synlig -->
+  <div id="bg" aria-hidden="true">
+    <canvas id="aurora" width="48" height="27"></canvas>
+    <div class="layer-cover">
+      <img class="cover-layer" alt="">
+      <img class="cover-layer" alt="">
+    </div>
+    <div class="layer-gradient"></div>
+    <div class="layer-solid"></div>
+    <div class="layer-paper"></div>
+    <div class="layer-dim"></div>
+    <div class="layer-grain"></div>
+  </div>
+
+  <header id="titlebar">
+    <div class="now-playing">
+      <img id="thumb" alt="">
+      <div class="now-text">
+        <div id="trackTitle">Lyric Player</div>
+        <div id="trackArtist"></div>
+      </div>
+    </div>
+    <div id="status"></div>
+  </header>
+
+  <main id="stage">
+    <aside id="art">
+      <div class="art-visual">
+        <img id="artCover" alt="">
+        <div class="vinyl">
+          <div class="vinyl-disc">
+            <div class="vinyl-label"><img id="vinylLabel" alt=""></div>
+          </div>
+          <div class="vinyl-sheen"></div>
+        </div>
+      </div>
+      <div class="art-meta">
+        <div id="artTitle"></div>
+        <div id="artArtist"></div>
+      </div>
+    </aside>
+    <section id="lyrics">
+      <div id="track"></div>
+      <div id="message">
+        <div id="messageIcon"></div>
+        <div id="messageText"></div>
+        <div id="messageSub"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="controls">
+    <div class="progress">
+      <span id="timeCur">0:00</span>
+      <div id="bar"><div id="barFill"></div><div id="barKnob"></div></div>
+      <span id="timeDur">0:00</span>
+    </div>
+    <div class="buttons">
+      <div class="side left">
+        <button class="icon-btn small" data-action="offset-minus" title="Tekst senere ( [ )"></button>
+        <span id="offsetLabel" title="Synk-justering for denne sangen">±0.0s</span>
+        <button class="icon-btn small" data-action="offset-plus" title="Tekst tidligere ( ] )"></button>
+      </div>
+      <div class="center">
+        <button class="icon-btn" data-action="previous" title="Forrige (←)"></button>
+        <button class="icon-btn big" data-action="playpause" title="Spill av / pause (mellomrom)"></button>
+        <button class="icon-btn" data-action="next" title="Neste (→)"></button>
+      </div>
+      <div class="side right">
+        <button class="icon-btn" data-action="pin" title="Alltid øverst (P)"></button>
+        <button class="icon-btn" data-action="mini" title="Minispiller (M)"></button>
+        <button class="icon-btn" data-action="fullscreen" title="Fullskjerm (F)"></button>
+        <button class="icon-btn" data-action="settings" title="Utseende og innstillinger (S)"></button>
+      </div>
+    </div>
+  </footer>
+
+  <aside id="settings" aria-label="Innstillinger">
+    <div class="settings-head">
+      <h2>Utseende og innstillinger</h2>
+      <button class="icon-btn" data-action="settings" title="Lukk (Esc)"></button>
+    </div>
+    <div id="settingsBody"></div>
+  </aside>
+
+  <div id="onboarding" hidden>
+    <div class="card">
+      <div class="logo"></div>
+      <h1>Lyric Player</h1>
+      <p class="lead">Synkroniserte lyrics for det du hører på i Spotify.</p>
+      <ol class="steps">
+        <li>
+          Lag en gratis app på <a href="#" data-link="https://developer.spotify.com/dashboard">Spotify Developer Dashboard</a>.
+          Kryss av for <b>Web API</b> og legg inn denne Redirect URI-en:
+          <div class="copy-row"><code id="redirectUri"></code><button class="chip" id="copyRedirect">Kopier</button></div>
+        </li>
+        <li>
+          Lim inn appens <b>Client ID</b> (Client Secret trengs ikke):
+          <input id="clientIdInput" placeholder="f.eks. 3f2a9c…" spellcheck="false" autocomplete="off">
+        </li>
+        <li>Logg inn og godkjenn tilgangen i nettleseren.</li>
+      </ol>
+      <div class="actions">
+        <button class="primary" id="loginBtn">Logg inn med Spotify</button>
+        <button class="ghost" id="demoBtn">Prøv demo uten Spotify</button>
+      </div>
+      <p id="loginError" class="error"></p>
+    </div>
+  </div>
+
+  <div id="toast" role="status"></div>
+
+  <script src="../shared/defaults.js"></script>
+  <script src="icons.js"></script>
+  <script src="palette.js"></script>
+  <script src="demo.js"></script>
+  <script src="settings-ui.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
